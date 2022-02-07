@@ -8,4 +8,5 @@
     <string name="textview4">TextView4</string>
     <string name="enter_the_userid">Enter the userId&#8230;</string>
     <string name="get">GET</string>
+    <string name="next_page">Next Page</string>
 </resources>

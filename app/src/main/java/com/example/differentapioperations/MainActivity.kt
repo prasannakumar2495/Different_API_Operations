@@ -3,12 +3,13 @@ package com.example.differentapioperations
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.differentapioperations.adapter.MyAdapter
+import com.example.differentapioperations.broadCastReceiver.NetworkConnection
 import com.example.differentapioperations.databinding.ActivityMainBinding
-import com.example.differentapioperations.model.Post
 import com.example.differentapioperations.repository.Repository
 import com.example.differentapioperations.viewmodel.MainViewModel
 import com.example.differentapioperations.viewmodel.MainViewModelFactory
@@ -17,10 +18,36 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: MainViewModel
     private val myAdapter = MyAdapter()
+
+    private lateinit var networkConnection: NetworkConnection
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+
+
+        networkConnection = NetworkConnection(applicationContext)
+        networkConnection.observe(this) { isConnected ->
+            if (isConnected) {
+                binding.GETButton.visibility = View.VISIBLE
+                binding.GETButton2.visibility = View.GONE
+                Toast.makeText(
+                    this,
+                    "Network Connection Enabled",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                binding.GETButton.visibility = View.GONE
+                binding.GETButton2.visibility = View.VISIBLE
+                Toast.makeText(
+                    this,
+                    "Network Connection Disabled",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
         setUpRecyclerView()
 
@@ -30,21 +57,8 @@ class MainActivity : AppCompatActivity() {
             this,
             viewModelFactory
         )[MainViewModel::class.java]
+
         //val myPost = Post("PK", 1234, "Prasanna Kumar", 123123)
-        binding.GETButton.setOnClickListener {
-            val userID = binding.userIdTxt.text.toString()
-            viewModel.getCustomPosts(Integer.parseInt(userID), "id", "desc")
-            viewModel.myCustomPosts.observe(this) { it ->
-                if (it.isSuccessful) {
-                    it.body()?.let { myAdapter.setData(it) }
-                    Log.d("Main", it.body().toString())
-                    Log.d("Main", it.code().toString())
-                    //Log.d("Main", it.headers().toString())
-                } else {
-                    Toast.makeText(this, it.code(), Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
 
 /*
   val options: HashMap<String, String> = hashMapOf()
@@ -75,6 +89,29 @@ class MainActivity : AppCompatActivity() {
  */
 
     }
+
+    public override fun onResume() {
+        super.onResume()
+        buttonClick()
+    }
+
+    private fun buttonClick() {
+        binding.GETButton.setOnClickListener {
+            val userID = binding.userIdTxt.text.toString()
+            viewModel.getCustomPosts(Integer.parseInt(userID), "id", "desc")
+            viewModel.myCustomPosts.observe(this) { it ->
+                if (it.isSuccessful) {
+                    it.body()?.let { myAdapter.setData(it) }
+                    Log.d("Main", it.body().toString())
+                    Log.d("Main", it.code().toString())
+                    //Log.d("Main", it.headers().toString())
+                } else {
+                    Toast.makeText(this, it.code(), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
 
     private fun setUpRecyclerView() {
         binding.recyclerView.adapter = myAdapter
